@@ -11,6 +11,8 @@ ROUTE =
 
 DISTANCE = 0.4
 
+NEXT_BUS_SECURITY_TOKEN = "07208823-cb4e-4845-9a43-b05034061a16"
+
 COLORS = [
   "#1f77b4"
   "#aec7e8"
@@ -133,9 +135,10 @@ $ ->
         icon: 'http://maps.google.com/mapfiles/ms/icons/red-dot.png'
 
       content = '<ul style="list-style-type:none; font-weight:700; padding:0; margin:0; white-space:nowrap">'
-      for route, i in window.stopsToRoutes[stop[STOP.ID]]
-        content += '<li style="color:' + COLORS[i] + ';">' + window.routes[route][1]
-        content += ' - ' + window.routes[route][2] + '</li>\n' if window.routes[route][2] isnt ""
+      for route_id, i in window.stopsToRoutes[stop[STOP.ID]]
+        content += '<li style="color:' + COLORS[i] + ';">' + window.routes[route_id][1]
+        content += ' - ' + window.routes[route][2] + '</li>\n' if window.routes[route_id][2] isnt ""
+        content += '<span style="padding-left:10px;" class="prediction" id="' + route_id + stop[STOP.ID] + '"></span>'
       content += '</ul>'
 
       google.maps.event.addListener marker, 'click', ->
@@ -163,6 +166,9 @@ $ ->
           currentRouteTagColors[window.routes[route_id][ROUTE.TAG]] = COLORS[i]
 
         marker.setIcon 'http://maps.google.com/mapfiles/ms/icons/blue-dot.png'
+
+        xmlURL = "http://webservices.nextbus.com/service/publicXMLFeed?command=predictionsForMultiStops&a=sf-muni"
+
         for route_id in window.stopsToRoutes[currentStop]
           routeLines[route_id].forEach (routeLine)->
             routeLine.setOptions
@@ -171,6 +177,7 @@ $ ->
               zIndex: 100
               strokeWeight: 4
           routeTag = window.routes[route_id][ROUTE.TAG]
+          xmlURL += "&" + routeTag + | + currentStop
           for bus_id, bus_marker of buses[routeTag]
             bus_marker.setIcon "http://chart.googleapis.com/chart?chst=d_bubble_icon_text_small&chld=bus|bbT|" + routeTag + "|" + currentRouteColors[route_id].slice(1) + "|eee"
             bus_marker.setVisible true
