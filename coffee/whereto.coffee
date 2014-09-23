@@ -6,6 +6,9 @@ STOP =
 
 DISTANCE = 0.4
 
+
+currentStop = undefined
+
 $ ->
   mapOptions =
     center: { lat: 37.7833, lng: -122.4167 }
@@ -31,26 +34,45 @@ $ ->
 
     closeStops = getClosestStops position
 
-    stopMarkers = closeStops.map (stop) ->
-      new google.maps.Marker
+    stopMarkers = {}
+    closeStops.forEach (stop) ->
+      marker = new google.maps.Marker
         position: {lat: stop[STOP.LAT], lng: stop[STOP.LNG]}
         map: map,
         title: stop[STOP.NAME]
+        icon: 'http://maps.google.com/mapfiles/ms/icons/red-dot.png'
+
+      google.maps.event.addListener marker, 'click', ->
+        if currentStop
+          stopMarkers[currentStop].setIcon 'http://maps.google.com/mapfiles/ms/icons/red-dot.png'
+          for route in window.stopsToRoutes[currentStop]
+            routeLines[route].forEach (routeLine)->
+              routeLine.setOptions
+                strokeColor: '#FF0000'
+                zIndex: 0
+                strokeWeight: 2
+
+        currentStop = stop[STOP.ID]
+        marker.setIcon 'http://maps.google.com/mapfiles/ms/icons/blue-dot.png'
+        for route in window.stopsToRoutes[currentStop]
+          routeLines[route].forEach (routeLine)->
+            routeLine.setOptions
+              strokeColor: '#0000FF'
+              zIndex: 100
+              strokeWeight: 4
+
+      stopMarkers[stop[STOP.ID]] = marker
 
     closeRoutes = []
-
     for stop in closeStops
       closeRoutes = closeRoutes.concat window.stopsToRoutes[stop[STOP.ID]]
-
     closeRoutes = uniquify closeRoutes
-    console.log closeRoutes
 
-    routeLines = []
+    routeLines = {}
     for route in closeRoutes
-      console.log 'route', route
+      routeLines[route] = [] unless route in routeLines
       for stops in window.routesToStops[route]
-        console.log 'stops', stops
-        routeLines.push new google.maps.Polyline
+        routeLines[route].push new google.maps.Polyline
           path: stops.map (stop_id) ->
             {lat: window.stops[stop_id][STOP.LAT], lng: window.stops[stop_id][STOP.LNG]}
           geodesic: true,

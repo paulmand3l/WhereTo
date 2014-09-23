@@ -1,5 +1,6 @@
 (function() {
-  var DISTANCE, STOP, getClosestStops, uniquify;
+  var DISTANCE, STOP, currentStop, getClosestStops, uniquify,
+    __indexOf = [].indexOf || function(item) { for (var i = 0, l = this.length; i < l; i++) { if (i in this && this[i] === item) return i; } return -1; };
 
   STOP = {
     ID: 0,
@@ -9,6 +10,8 @@
   };
 
   DISTANCE = 0.4;
+
+  currentStop = void 0;
 
   $(function() {
     var map, mapOptions;
@@ -39,15 +42,51 @@
         radius: DISTANCE * 1000 + position.coords.accuracy
       });
       closeStops = getClosestStops(position);
-      stopMarkers = closeStops.map(function(stop) {
-        return new google.maps.Marker({
+      stopMarkers = {};
+      closeStops.forEach(function(stop) {
+        var marker;
+        marker = new google.maps.Marker({
           position: {
             lat: stop[STOP.LAT],
             lng: stop[STOP.LNG]
           },
           map: map,
-          title: stop[STOP.NAME]
+          title: stop[STOP.NAME],
+          icon: 'http://maps.google.com/mapfiles/ms/icons/red-dot.png'
         });
+        google.maps.event.addListener(marker, 'click', function() {
+          var route, _i, _j, _len, _len1, _ref, _ref1, _results;
+          if (currentStop) {
+            stopMarkers[currentStop].setIcon('http://maps.google.com/mapfiles/ms/icons/red-dot.png');
+            _ref = window.stopsToRoutes[currentStop];
+            for (_i = 0, _len = _ref.length; _i < _len; _i++) {
+              route = _ref[_i];
+              routeLines[route].forEach(function(routeLine) {
+                return routeLine.setOptions({
+                  strokeColor: '#FF0000',
+                  zIndex: 0,
+                  strokeWeight: 2
+                });
+              });
+            }
+          }
+          currentStop = stop[STOP.ID];
+          marker.setIcon('http://maps.google.com/mapfiles/ms/icons/blue-dot.png');
+          _ref1 = window.stopsToRoutes[currentStop];
+          _results = [];
+          for (_j = 0, _len1 = _ref1.length; _j < _len1; _j++) {
+            route = _ref1[_j];
+            _results.push(routeLines[route].forEach(function(routeLine) {
+              return routeLine.setOptions({
+                strokeColor: '#0000FF',
+                zIndex: 100,
+                strokeWeight: 4
+              });
+            }));
+          }
+          return _results;
+        });
+        return stopMarkers[stop[STOP.ID]] = marker;
       });
       closeRoutes = [];
       for (_i = 0, _len = closeStops.length; _i < _len; _i++) {
@@ -55,16 +94,16 @@
         closeRoutes = closeRoutes.concat(window.stopsToRoutes[stop[STOP.ID]]);
       }
       closeRoutes = uniquify(closeRoutes);
-      console.log(closeRoutes);
-      routeLines = [];
+      routeLines = {};
       for (_j = 0, _len1 = closeRoutes.length; _j < _len1; _j++) {
         route = closeRoutes[_j];
-        console.log('route', route);
+        if (__indexOf.call(routeLines, route) < 0) {
+          routeLines[route] = [];
+        }
         _ref = window.routesToStops[route];
         for (_k = 0, _len2 = _ref.length; _k < _len2; _k++) {
           stops = _ref[_k];
-          console.log('stops', stops);
-          routeLines.push(new google.maps.Polyline({
+          routeLines[route].push(new google.maps.Polyline({
             path: stops.map(function(stop_id) {
               return {
                 lat: window.stops[stop_id][STOP.LAT],
