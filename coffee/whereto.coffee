@@ -4,6 +4,8 @@ STOP =
   LAT: 2
   LNG: 3
 
+DISTANCE = 0.4
+
 $ ->
   mapOptions =
     center: { lat: 37.7833, lng: -122.4167 }
@@ -25,7 +27,7 @@ $ ->
       fillOpacity: 0,
       map: map,
       center: myPosition,
-      radius: 400 + position.coords.accuracy
+      radius: DISTANCE*1000 + position.coords.accuracy
 
     closeStops = getClosestStops position
 
@@ -78,5 +80,5 @@ getClosestStops = (position) ->
       latitude: stop[STOP.LAT]
       longitude: stop[STOP.LNG]
     km = window.haversine(position.coords, stopCoords) - position.coords.accuracy * (1 / 1000)
-    closeStops.push(stop) if km < 0.4
+    closeStops.push(stop) if km < DISTANCE
   closeStops

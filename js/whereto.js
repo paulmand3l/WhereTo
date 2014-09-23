@@ -1,5 +1,5 @@
 (function() {
-  var STOP, getClosestStops, uniquify;
+  var DISTANCE, STOP, getClosestStops, uniquify;
 
   STOP = {
     ID: 0,
@@ -7,6 +7,8 @@
     LAT: 2,
     LNG: 3
   };
+
+  DISTANCE = 0.4;
 
   $(function() {
     var map, mapOptions;
@@ -34,7 +36,7 @@
         fillOpacity: 0,
         map: map,
         center: myPosition,
-        radius: 400 + position.coords.accuracy
+        radius: DISTANCE * 1000 + position.coords.accuracy
       });
       closeStops = getClosestStops(position);
       stopMarkers = closeStops.map(function(stop) {
@@ -109,7 +111,7 @@
         longitude: stop[STOP.LNG]
       };
       km = window.haversine(position.coords, stopCoords) - position.coords.accuracy * (1 / 1000);
-      if (km < 0.4) {
+      if (km < DISTANCE) {
         closeStops.push(stop);
       }
     }
